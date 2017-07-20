@@ -166,7 +166,7 @@ router.get('/:userId', function(req, res, next) {
               }
               if(result){
                 contentDataList.push(result);
-                console.log("cache hit!");
+                //console.log("cache hit!");
                 monitoring.cacheHit++;
                 getUserContentData(i+1, callback);
 
@@ -188,7 +188,7 @@ router.get('/:userId', function(req, res, next) {
                       else {
                         if(result){
                           contentDataList.push(result[0].message);
-                          console.log("cache miss!");
+                          //console.log("cache miss!");
                           monitoring.cacheMiss++;
 
                         } else {
