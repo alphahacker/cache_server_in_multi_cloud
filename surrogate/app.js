@@ -174,7 +174,7 @@ var init = function() {
             var value = MAX_MEMORY * result[i].friendPortion;
             redisPool.socialMemory.set(key, value, function (err) {
                 if(err) rejected("fail to initialize the social memory in Redis");
-                //console.log("["+ i +"] key : " + key + ", value : " + value);
+                console.log("["+ i +"] key : " + key + ", value : " + value);
                 setSocialMemoryInRedis(i+1, callback);
             });
           }
