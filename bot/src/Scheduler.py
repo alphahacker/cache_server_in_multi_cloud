@@ -189,9 +189,15 @@ class Scheduler:
     def startToCommunicateWithService(self, nextJobToWork, dstIPAddress):
         Log.debug("Start to send data to Surrogate Server")
         nTotalOperation = nextJobToWork
+        Log.debug("The number of operation at this time = ")
+        Log.debug(nTotalOperation)
         surrogate = Surrogate()
 
+        surrogate.commWithSurrogate(dstIPAddress, self.userID, nTotalOperation)
+
+        '''
         for i in range(0, nTotalOperation):
             surrogate.commWithSurrogate(dstIPAddress, self.userID)
             delay = random.randrange(1, 6)
             time.sleep(delay / 10)
+        '''

@@ -1,6 +1,8 @@
 import urllib
 import urllib2
 import json
+import random
+import time
 
 from MsgSets import *
 from Log import *
@@ -60,10 +62,15 @@ class Surrogate:
         self.surrogateIp = ""
         self.userId = ""
 
-    def commWithSurrogate(self, surrogateIp, userId):
+    def commWithSurrogate(self, surrogateIp, userId, nTotalOperation):
         self.surrogateIp = surrogateIp
         self.userId = userId
-        self.writeOperation()
+
+        for i in range(0, nTotalOperation):
+            self.writeOperation()
+            delay = random.randrange(1, 6)
+            time.sleep(delay / 10)
+
         self.readOperation()
 
     def writeOperation(self):
@@ -77,7 +84,7 @@ class Surrogate:
         parsedJsonData = json.loads(resultData)
 
         if parsedJsonData["status"] == 'OK':
-            pass
+            Log.info("WRITE operation : USER ID = " + self.userId)
         else:
             Log.info("ERROR ! fail to communicate with surrogate server [WriteOperation][POST][" + url + "]")
 
@@ -88,7 +95,7 @@ class Surrogate:
         parsedJsonData = json.loads(resultData)
 
         if parsedJsonData["status"] == 'OK':
-            pass
+            Log.info("READ operation : USER ID = " + self.userId)
         else:
             Log.info("ERROR ! fail to communicate with surrogate server [ReadOperation][GET][" + url + "]")
 
