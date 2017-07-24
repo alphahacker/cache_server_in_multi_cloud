@@ -52,7 +52,7 @@ router.post('/', function(req, res, next) {
   //5. tweetObjectList를 이용해서, 각 surrogate 서버 index 메모리에, 모든 친구들에 대해서 넣는다.
   .then(function(){
     return new Promise(function(resolved, rejected){
-      pushTweetInIndexMemory = function(i, callback){
+      var pushTweetInIndexMemory = function(i, callback){
         if(i >= tweetObjectList.length){
           callback();
         } else {
@@ -70,6 +70,7 @@ router.post('/', function(req, res, next) {
 
       pushTweetInIndexMemory(0, function(){
         resolved();
+        pushTweetInIndexMemory = null;
       })
     })
   }, function(err){
@@ -79,7 +80,7 @@ router.post('/', function(req, res, next) {
   //6. tweetObjectList를 이용해서, 각 surrogate 서버 data 메모리에, 모든 친구들에 대해서 넣는다. 이때 메모리양 체크하면서 넣어야한다.
   .then(function(){
     return new Promise(function(resolved, rejected){
-      pushTweetInDataMemory = function(i, callback){
+      var pushTweetInDataMemory = function(i, callback){
         if(i >= tweetObjectList.length){
           callback();
         } else {

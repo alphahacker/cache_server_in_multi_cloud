@@ -144,7 +144,7 @@ router.get('/:userId', function(req, res, next) {
       var readEndTime = 0;
 
       readStartTime = new Date().getTime();
-      getUserContentData = function(i, callback){
+      var getUserContentData = function(i, callback){
         if(i >= contentIndexList.length){
           callback();
         } else {
@@ -250,7 +250,7 @@ router.post('/:userId', function(req, res, next) {
   promise
   .then(function(friendList){
     return new Promise(function(resolved, rejected){
-      pushTweetInOriginDB = function(i, callback){
+      var pushTweetInOriginDB = function(i, callback){
         if(i >= friendList.length){
           callback();
         } else {
@@ -299,6 +299,7 @@ router.post('/:userId', function(req, res, next) {
 
       pushTweetInOriginDB(0, function(){
         resolved();
+        pushTweetInOriginDB = null;
       })
     })
   }, function(err){
@@ -308,7 +309,7 @@ router.post('/:userId', function(req, res, next) {
   //3-2. origin server에 있는 mysql의 timeline에, 모든 친구들에 대해서 데이터를 넣는다.
   .then(function(){
     return new Promise(function(resolved, rejected){
-      pushIndexInOriginDB = function(i, callback){
+      var pushIndexInOriginDB = function(i, callback){
         if(i >= tweetObjectList.length){
           callback();
         } else {
@@ -350,6 +351,7 @@ router.post('/:userId', function(req, res, next) {
 
       pushIndexInOriginDB(0, function(){
         resolved();
+        pushIndexInOriginDB = null;
       })
     })
   }, function(err){
@@ -378,7 +380,7 @@ router.post('/:userId', function(req, res, next) {
   //5. tweetObjectList를 이용해서, 각 surrogate 서버 index 메모리에, 모든 친구들에 대해서 넣는다.
   .then(function(){
     return new Promise(function(resolved, rejected){
-      pushTweetInIndexMemory = function(i, callback){
+      var pushTweetInIndexMemory = function(i, callback){
         if(i >= tweetObjectList.length){
           callback();
         } else {
@@ -408,7 +410,7 @@ router.post('/:userId', function(req, res, next) {
   //6. tweetObjectList를 이용해서, 각 surrogate 서버 data 메모리에, 모든 친구들에 대해서 넣는다. 이때 메모리양 체크하면서 넣어야한다.
   .then(function(){
     return new Promise(function(resolved, rejected){
-      pushTweetInDataMemory = function(i, callback){
+      var pushTweetInDataMemory = function(i, callback){
         if(i >= tweetObjectList.length){
           callback();
         } else {
