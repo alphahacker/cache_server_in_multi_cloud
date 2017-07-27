@@ -444,6 +444,7 @@ router.get('/init', function(req, res, next) {
   .then(function(){
     return new Promise(function(resolved, rejected){
       console.log("surrogate server [" + serverLocation + "] is ready, completely.");
+      res.send("surrogate server [" + serverLocation + "] is ready, completely.");
       resolved();
     })
   }, function(err){
@@ -578,7 +579,7 @@ router.get('/:userId', function(req, res, next) {
               }
               if(result){
                 contentDataList.push(result);
-                //console.log("cache hit!");
+                console.log("cache hit!");
                 monitoring.cacheHit++;
                 getUserContentData(i+1, callback);
 
@@ -595,7 +596,7 @@ router.get('/:userId', function(req, res, next) {
                       }
                       if(result){
                         contentDataList.push(result[0].message);
-                        //console.log("cache miss!");
+                        console.log("cache miss!");
                         monitoring.cacheMiss++;
                         //operation_log.info("[Cache Hit]= " + monitoring.cacheHit + ", [Cache Miss]= " + monitoring.cacheMiss + ", [Cache Ratio]= " + monitoring.getCacheHitRatio());
 
