@@ -2,16 +2,12 @@ var redis = require('redis');
 
 var redisClient = {};
 
-// redisClient.indexMemory = redis.createClient(1234, '127.0.0.1');
-// redisClient.dataMemory = redis.createClient(1235, '127.0.0.1');
-// redisClient.socialMemory = redis.createClient(1236, '127.0.0.1');
-// redisClient.locationMemory = redis.createClient(1237, '127.0.0.1');
-
 redisClient.connectClients = function (redisIp) {
-  redisClient.indexMemory = redis.createClient(1234, redisIp);
-  redisClient.dataMemory = redis.createClient(1235, redisIp);
-  redisClient.socialMemory = redis.createClient(1236, redisIp);
-  redisClient.locationMemory = redis.createClient(1237, redisIp);
+  redisClient.indexMemory = redis.createClient(1234, redisIp);      //사용자가 업로드한 컨텐츠 데이터에 대한 인덱스가 저장되는 곳
+  redisClient.dataMemory = redis.createClient(1235, redisIp);       //실제로 컨텐츠 데이터가 저장되는 곳
+  redisClient.socialMemory = redis.createClient(1236, redisIp);     //각 사용자에게 할당된 메모리양이 저장되는 곳
+  redisClient.locationMemory = redis.createClient(1237, redisIp);   //사용자의 위치가 저장되어있는 곳
+  redisClient.friendListMemory = redis.createClient(1238, redisIp);   //사용자의 친구들 리스트가 저장되어있는 곳
 }
 
 redisClient.flushMemory = function () {

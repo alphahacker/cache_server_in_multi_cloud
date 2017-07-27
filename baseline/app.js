@@ -150,7 +150,7 @@ var init = function() {
     })
     .then(function(){
       return new Promise(function(resolved, rejected){
-        setSocialMemoryInRedis = function(i, callback){
+        var setSocialMemoryInRedis = function(i, callback){
           if(i >= result.length){
             callback();
           } else {
@@ -167,6 +167,7 @@ var init = function() {
 
         setSocialMemoryInRedis(0, function(){
           resolved();
+          setSocialMemoryInRedis = null;
         })
       })
     }, function(err){
@@ -187,7 +188,7 @@ var init = function() {
 
     .then(function(){
       return new Promise(function(resolved, rejected){
-        getUsersContentsFromDB = function(i, callback){
+        var getUsersContentsFromDB = function(i, callback){
           var userContents = {};
 
           if(i >= result.length){
@@ -224,6 +225,7 @@ var init = function() {
 
         getUsersContentsFromDB(0, function(){
           resolved();
+          getUsersContentsFromDB = null;
         })
 
       })
@@ -232,7 +234,7 @@ var init = function() {
     })
     .then(function(){
       return new Promise(function(resolved, rejected){
-        setIndexMemoryInRedis = function(i, callback){
+        var setIndexMemoryInRedis = function(i, callback){
           if(i >= allUsersContents.length){
             callback();
           } else {
@@ -253,6 +255,7 @@ var init = function() {
 
         setIndexMemoryInRedis(0, function(){
           resolved();
+          setIndexMemoryInRedis = null;
         })
       })
     }, function(err){
@@ -266,6 +269,83 @@ var init = function() {
     }, function(err){
         console.log(err);
     })
+
+
+
+    /**************************************************************************/
+    /*********************** friend list memory 초기화 **************************/
+    /**************************************************************************/
+    .then(function(){
+      return new Promise(function(resolved, rejected){
+        var users = [];
+        dbPool.getConnection(function(err, conn) {
+          var query_stmt = 'SELECT userId FROM user';
+          conn.query(query_stmt, function(err, rows) {
+            conn.release(); //MySQL connection release
+
+            if(err) rejected("DB err!");
+
+            for (var j=0; j<rows.length; j++) {
+                users.push(rows[j].userId);
+            }
+            resolved(users);
+          })
+        });
+      })
+    }, function(err){
+        console.log(err);
+    })
+    .then(function(users){
+      return new Promise(function(resolved, rejected){
+        var setUserFriendsInRedis = function(i, callback){
+          if(i >= allUsersContents.length){
+            callback();
+          } else {
+            //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
+            dbPool.getConnection(function(err, conn) {
+              var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + user[i] + '"';
+              conn.query(query_stmt, function(err, rows) {
+                conn.release();
+                if(err){
+                  rejected("DB err!");
+                }
+                else {
+                  var key = user[i];
+                  var friendList = rows;
+                  for(var j=0; j<friendList.length; j++){
+                    var setContentList = function(friendIndex){
+                      var value = friendList[friendIndex];
+                      console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
+                      redisPool.friendListMemory.lpush(key,value, function (err) {
+                          if(err) rejected("fail to set the friend list memory in Redis");
+                      });
+                    }(j);
+                  }
+                  setUserFriendsInRedis(i+1, callback);
+                }
+              });
+            });
+          }
+        }
+
+        setUserFriendsInRedis(0, function(){
+          resolved();
+          setUserFriendsInRedis = null;
+        })
+      })
+    }, function(err){
+        console.log(err);
+    })
+    .then(function(){
+      return new Promise(function(resolved, rejected){
+        console.log("friend list memory ready");
+        resolved();
+      })
+    }, function(err){
+        console.log(err);
+    })
+
+
 
     /**************************************************************************/
     /************************** User Location 초기화 ****************************/
@@ -294,7 +374,7 @@ var init = function() {
     })
     .then(function(){
       return new Promise(function(resolved, rejected){
-        setUserLocationInRedis = function(i, callback){
+        var setUserLocationInRedis = function(i, callback){
           if(i >= userLocations.length){
             callback();
           } else {
@@ -310,6 +390,7 @@ var init = function() {
 
         setUserLocationInRedis(0, function(){
           resolved();
+          setUserLocationInRedis = null;
         })
       })
     }, function(err){

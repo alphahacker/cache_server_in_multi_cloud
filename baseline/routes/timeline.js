@@ -65,13 +65,9 @@ router.get('/:userId', function(req, res, next) {
   //var key = req.params.userId;
   var userLocation;
 
-  //데이터는 한번에 20개씩 가져오도록 한다.
+  //사용자의 친구 수 만큼 컨텐츠를 읽어오도록 한다. (친구 수와 사용량이 비례하기 때문에, 친구 수가 많은 사용자가 더 많은 컨텐츠를 한번에 읽어 올거라고 생각해서)
   var start = 0;
-  var end = 19;
-
-  //데이터를 다 가져오게 하면?
-  // var start = 0;
-  // var end = 19;
+  var end = 0;
 
   //index memory에 있는 contents list를 저장
   var contentIndexList = [];
@@ -79,19 +75,48 @@ router.get('/:userId', function(req, res, next) {
 
   var promise = new Promise(function(resolved, rejected){
     var key = req.params.userId;
-    redisPool.indexMemory.lrange(key, start, end, function (err, result) {
+    redisPool.friendListMemory.llen(key, function (err, result) {
         if(err){
-          error_log.info("fail to get the index memory in Redis : " + err);
-          error_log.info("key (req.params.userId) : " + key + ", start : " + start + ", end : " + end);
+          error_log.info("fail to get the friendList memory in Redis : " + err);
+          error_log.info("key (req.params.userId) : " + key);
           error_log.info();
-          rejected("fail to get the index memory in Redis");
+          rejected("fail to get the friendList memory in Redis");
         }
-        contentIndexList = result;
-        resolved(contentIndexList);
+        else if(result == undefined || result == null){
+          error_log.info("fail to get the friendList memory in Redis : " + err);
+          error_log.info("key (req.params.userId) : " + key);
+          error_log.info();
+          console.log("There's no data in friendListMemory!");
+          rejected("fail to get the friendList memory in Redis");
+        }
+        else {
+          end = result;
+          resolved(contentIndexList);
+        }
     });
   });
 
   promise
+  .then(function(contentIndexList){
+    return new Promise(function(resolved, rejected){
+      var key = req.params.userId;
+      console.log("key (userId) = " + key);
+      console.log("lrange start index = " + start);
+      console.log("lragne end index = " + end);
+      redisPool.indexMemory.lrange(key, start, end, function (err, result) {
+          if(err){
+            error_log.info("fail to get the index memory in Redis : " + err);
+            error_log.info("key (req.params.userId) : " + key + ", start : " + start + ", end : " + end);
+            error_log.info();
+            rejected("fail to get the index memory in Redis");
+          }
+          contentIndexList = result;
+          resolved(contentIndexList);
+      });
+    })
+  }, function(err){
+      console.log(err);
+  })
   .then(function(contentIndexList){
     return new Promise(function(resolved, rejected){
       var key = req.params.userId;
@@ -229,21 +254,35 @@ router.post('/:userId', function(req, res, next) {
   //2. 친구들 리스트 뽑아서
   var promise = new Promise(function(resolved, rejected){
       var friendList = [];
-      dbPool.getConnection(function(err, conn) {
-          var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
-          conn.query(query_stmt, function(err, rows) {
-              if(err) {
-                error_log.info("fail to get friendList (MySQL) : " + err);
-                error_log.info("QUERY STMT : " + query_stmt);
-                rejected("fail to extract friend id list from origin server!");
-              }
-              for (var i=0; i<rows.length; i++) {
-                  friendList.push(rows[i].friendId);
-              }
-              conn.release(); //MySQL connection release
-              resolved(friendList);
-          })
+      var key = req.params.userId;
+      var start = 0;
+      var end = -1;
+      redisPool.friendListMemory.lrange(key, start, end, function (err, result) {
+          if(err){
+            error_log.info("fail to get the index memory in Redis : " + err);
+            error_log.info("key (req.params.userId) : " + key + ", start : " + start + ", end : " + end);
+            error_log.info();
+            rejected("fail to get the index memory in Redis");
+          }
+          friendList = result;
+          resolved(friendList);
       });
+      // var friendList = [];
+      // dbPool.getConnection(function(err, conn) {
+      //     var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
+      //     conn.query(query_stmt, function(err, rows) {
+      //         if(err) {
+      //           error_log.info("fail to get friendList (MySQL) : " + err);
+      //           error_log.info("QUERY STMT : " + query_stmt);
+      //           rejected("fail to extract friend id list from origin server!");
+      //         }
+      //         for (var i=0; i<rows.length; i++) {
+      //             friendList.push(rows[i].friendId);
+      //         }
+      //         conn.release(); //MySQL connection release
+      //         resolved(friendList);
+      //     })
+      // });
   });
 
   //3-1. origin server에 있는 mysql의 content에 모든 친구들에 대해서 데이터를 넣는다. 이 때, lastInsertId를 이용해서 contentId를 만듦.
@@ -307,56 +346,56 @@ router.post('/:userId', function(req, res, next) {
   })
 
   //3-2. origin server에 있는 mysql의 timeline에, 모든 친구들에 대해서 데이터를 넣는다.
-  .then(function(){
-    return new Promise(function(resolved, rejected){
-      var pushIndexInOriginDB = function(i, callback){
-        if(i >= tweetObjectList.length){
-          callback();
-        } else {
-          dbPool.getConnection(function(err, conn) {
-              var query_stmt = 'SELECT id FROM user WHERE userId = "' + tweetObjectList[i].userId + '"';
-              conn.query(query_stmt, function(err, result) {
-                  if(err) {
-                     error_log.debug("Query Stmt = " + query_stmt);
-                     error_log.debug("ERROR MSG = " + err);
-                     error_log.debug();
-                     rejected("DB err!");
-                  }
-                  conn.release(); //MySQL connection release
-                  var userPkId = result[0].id;
-                  //////////////////////////////////////////////////////////////
-                  dbPool.getConnection(function(err, conn) {
-                      var query_stmt2 = 'INSERT INTO timeline (uid, contentId) VALUES (' + userPkId + ', ' + tweetObjectList[i].contentId + ')'
-                      conn.query(query_stmt2, function(err, result) {
-                          if(err) {
-                             error_log.debug("Query Stmt = " + query_stmt);
-                             error_log.debug("ERROR MSG = " + err);
-                             error_log.debug();
-                             rejected("DB err!");
-                          }
-                          if(result == undefined || result == null){
-                              error_log.debug("Query Stmt = " + query_stmt2);
-                              error_log.debug("Query Result = " + result);
-                          }
-
-                          conn.release();
-                          pushIndexInOriginDB(i+1, callback);
-                      });
-                  });
-                  //////////////////////////////////////////////////////////////
-              })
-          });
-        }
-      }
-
-      pushIndexInOriginDB(0, function(){
-        resolved();
-        pushIndexInOriginDB = null;
-      })
-    })
-  }, function(err){
-      console.log(err);
-  })
+  // .then(function(){
+  //   return new Promise(function(resolved, rejected){
+  //     var pushIndexInOriginDB = function(i, callback){
+  //       if(i >= tweetObjectList.length){
+  //         callback();
+  //       } else {
+  //         dbPool.getConnection(function(err, conn) {
+  //             var query_stmt = 'SELECT id FROM user WHERE userId = "' + tweetObjectList[i].userId + '"';
+  //             conn.query(query_stmt, function(err, result) {
+  //                 if(err) {
+  //                    error_log.debug("Query Stmt = " + query_stmt);
+  //                    error_log.debug("ERROR MSG = " + err);
+  //                    error_log.debug();
+  //                    rejected("DB err!");
+  //                 }
+  //                 conn.release(); //MySQL connection release
+  //                 var userPkId = result[0].id;
+  //                 //////////////////////////////////////////////////////////////
+  //                 dbPool.getConnection(function(err, conn) {
+  //                     var query_stmt2 = 'INSERT INTO timeline (uid, contentId) VALUES (' + userPkId + ', ' + tweetObjectList[i].contentId + ')'
+  //                     conn.query(query_stmt2, function(err, result) {
+  //                         if(err) {
+  //                            error_log.debug("Query Stmt = " + query_stmt);
+  //                            error_log.debug("ERROR MSG = " + err);
+  //                            error_log.debug();
+  //                            rejected("DB err!");
+  //                         }
+  //                         if(result == undefined || result == null){
+  //                             error_log.debug("Query Stmt = " + query_stmt2);
+  //                             error_log.debug("Query Result = " + result);
+  //                         }
+  //
+  //                         conn.release();
+  //                         pushIndexInOriginDB(i+1, callback);
+  //                     });
+  //                 });
+  //                 //////////////////////////////////////////////////////////////
+  //             })
+  //         });
+  //       }
+  //     }
+  //
+  //     pushIndexInOriginDB(0, function(){
+  //       resolved();
+  //       pushIndexInOriginDB = null;
+  //     })
+  //   })
+  // }, function(err){
+  //     console.log(err);
+  // })
 
   //4. 다른 surrogate 서버로 redirect
   .then(function(){
