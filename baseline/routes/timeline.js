@@ -496,9 +496,9 @@ router.get('/:userId', function(req, res, next) {
   .then(function(contentIndexList){
     return new Promise(function(resolved, rejected){
       var key = req.params.userId;
-      console.log("key (userId) = " + key);
-      console.log("lrange start index = " + start);
-      console.log("lragne end index = " + end);
+      // console.log("key (userId) = " + key);
+      // console.log("lrange start index = " + start);
+      // console.log("lragne end index = " + end);
       redisPool.indexMemory.lrange(key, start, end, function (err, result) {
           if(err){
             error_log.info("fail to get the index memory in Redis : " + err);
@@ -579,7 +579,7 @@ router.get('/:userId', function(req, res, next) {
               }
               if(result){
                 contentDataList.push(result);
-                console.log("cache hit!");
+                //console.log("cache hit!");
                 monitoring.cacheHit++;
                 getUserContentData(i+1, callback);
 
@@ -596,7 +596,7 @@ router.get('/:userId', function(req, res, next) {
                       }
                       if(result){
                         contentDataList.push(result[0].message);
-                        console.log("cache miss!");
+                        //console.log("cache miss!");
                         monitoring.cacheMiss++;
                         //operation_log.info("[Cache Hit]= " + monitoring.cacheHit + ", [Cache Miss]= " + monitoring.cacheMiss + ", [Cache Ratio]= " + monitoring.getCacheHitRatio());
 
@@ -686,14 +686,14 @@ router.post('/:userId', function(req, res, next) {
   .then(function(friendList){
     return new Promise(function(resolved, rejected){
       var pushTweetInOriginDB = function(i, callback){
-        console.log("userId = " + req.params.userId);
-        console.log("friendList.length = " + friendList.length);
+        // console.log("userId = " + req.params.userId);
+        // console.log("friendList.length = " + friendList.length);
         if(i >= friendList.length){
           callback();
         } else {
           dbPool.getConnection(function(err, conn) {
               var query_stmt = 'SELECT id FROM user WHERE userId = "' + friendList[i] + '"';
-              console.log(query_stmt);
+              //console.log(query_stmt);
               conn.query(query_stmt, function(err, result) {
                   if(err) {
                      error_log.debug("Query Stmt = " + query_stmt);
