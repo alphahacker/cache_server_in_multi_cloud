@@ -30,6 +30,11 @@ redisClient.flushMemory = function () {
       if(err) throw err;
       console.log("location memory flush completed"); // will be true if successfull
   });
+
+  redisClient.friendListMemory.flushdb( function (err, succeeded) {
+      if(err) throw err;
+      console.log("friend list memory flush completed"); // will be true if successfull
+  });
 }
 
 module.exports = redisClient;
