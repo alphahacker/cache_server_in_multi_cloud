@@ -60,11 +60,11 @@ router.get('/test2/:userId', function(req, res, next) {
 
 router.get('/init', function(req, res, next) {
   //monitoring 값 초기화
-  monitoring.cacheHit = 0;
-  monitoring.cacheMiss = 0;
-  monitoring.traffic = 0;
-  monitoring.readCount = 0;
-  monitoring.writeCount = 0;
+  // monitoring.cacheHit = 0;
+  // monitoring.cacheMiss = 0;
+  // monitoring.traffic = 0;
+  // monitoring.readCount = 0;
+  // monitoring.writeCount = 0;
 
   /* db 에서 각 사용자에게 할당된 메모리 양 가지고 오기 */
 
@@ -75,24 +75,24 @@ router.get('/init', function(req, res, next) {
   var userLocations = [];
 
   var promise = new Promise(function(resolved, rejected){
-    var redisIp;
-    var thisServerIp = util.serverIp();
-    if(thisServerIp == '165.132.104.210') {
-        redisIp = '165.132.104.210';
-    }
-    else if (thisServerIp == '165.132.104.208') {
-        redisIp = '165.132.104.193';
-    }
-    else if (thisServerIp == '165.132.104.193') {
-        redisIp = '165.132.104.193';
-    }
-    else if (thisServerIp == '165.132.104.209') {
-        redisIp = '165.132.104.209';
-    }
-    else {
-        console.log("Wrong access IP!");
-    }
-    redisPool.connectClients(redisIp);
+    // var redisIp;
+    // var thisServerIp = util.serverIp();
+    // if(thisServerIp == '165.132.104.210') {
+    //     redisIp = '165.132.104.210';
+    // }
+    // else if (thisServerIp == '165.132.104.208') {
+    //     redisIp = '165.132.104.193';
+    // }
+    // else if (thisServerIp == '165.132.104.193') {
+    //     redisIp = '165.132.104.193';
+    // }
+    // else if (thisServerIp == '165.132.104.209') {
+    //     redisIp = '165.132.104.209';
+    // }
+    // else {
+    //     console.log("Wrong access IP!");
+    // }
+    // redisPool.connectClients(redisIp);
     resolved();
   });
 
@@ -101,7 +101,7 @@ router.get('/init', function(req, res, next) {
     return new Promise(function(resolved, rejected){
       //기존에 redis에 있던 내용들 다 지워버려야 함
       try {
-        redisPool.flushMemory();
+        //redisPool.flushMemory();
         resolved();
       } catch (e) {
         rejected("flush error!");
@@ -646,36 +646,36 @@ router.post('/:userId', function(req, res, next) {
 
   //2. 친구들 리스트 뽑아서
   var promise = new Promise(function(resolved, rejected){
-      // var friendList = [];
-      // var key = req.params.userId;
-      // var start = 0;
-      // var end = -1;
-      // redisPool.friendListMemory.lrange(key, start, end, function (err, result) {
-      //     if(err){
-      //       error_log.info("fail to get the index memory in Redis : " + err);
-      //       error_log.info("key (req.params.userId) : " + key + ", start : " + start + ", end : " + end);
-      //       error_log.info();
-      //       rejected("fail to get the index memory in Redis");
-      //     }
-      //     friendList = result;
-      //     resolved(friendList);
-      // });
       var friendList = [];
-      dbPool.getConnection(function(err, conn) {
-          var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
-          conn.query(query_stmt, function(err, rows) {
-              if(err) {
-                error_log.info("fail to get friendList (MySQL) : " + err);
-                error_log.info("QUERY STMT : " + query_stmt);
-                rejected("fail to extract friend id list from origin server!");
-              }
-              for (var i=0; i<rows.length; i++) {
-                  friendList.push(rows[i].friendId);
-              }
-              conn.release(); //MySQL connection release
-              resolved(friendList);
-          })
+      var key = req.params.userId;
+      var start = 0;
+      var end = -1;
+      redisPool.friendListMemory.lrange(key, start, end, function (err, result) {
+          if(err){
+            error_log.info("fail to get the index memory in Redis : " + err);
+            error_log.info("key (req.params.userId) : " + key + ", start : " + start + ", end : " + end);
+            error_log.info();
+            rejected("fail to get the index memory in Redis");
+          }
+          friendList = result;
+          resolved(friendList);
       });
+      // var friendList = [];
+      // dbPool.getConnection(function(err, conn) {
+      //     var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
+      //     conn.query(query_stmt, function(err, rows) {
+      //         if(err) {
+      //           error_log.info("fail to get friendList (MySQL) : " + err);
+      //           error_log.info("QUERY STMT : " + query_stmt);
+      //           rejected("fail to extract friend id list from origin server!");
+      //         }
+      //         for (var i=0; i<rows.length; i++) {
+      //             friendList.push(rows[i].friendId);
+      //         }
+      //         conn.release(); //MySQL connection release
+      //         resolved(friendList);
+      //     })
+      // });
   });
 
   //3-1. origin server에 있는 mysql의 content에 모든 친구들에 대해서 데이터를 넣는다. 이 때, lastInsertId를 이용해서 contentId를 만듦.

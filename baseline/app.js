@@ -59,57 +59,57 @@ app.use('/timeline', timeline);
 
 var init = function() {
 
-    // //monitoring 값 초기화
-    // monitoring.cacheHit = 0;
-    // monitoring.cacheMiss = 0;
-    // monitoring.traffic = 0;
-    // monitoring.readCount = 0;
-    // monitoring.writeCount = 0;
-    //
-    // /* db 에서 각 사용자에게 할당된 메모리 양 가지고 오기 */
-    //
-    // var MAX_MEMORY = config.totalMemory;
-    // var serverLocation;
-    // var result = [];
-    // var allUsersContents = [];
-    // var userLocations = [];
-    //
-    // var promise = new Promise(function(resolved, rejected){
-    //   var redisIp;
-    //   var thisServerIp = util.serverIp();
-    //   if(thisServerIp == '165.132.104.210') {
-    //       redisIp = '165.132.104.210';
-    //   }
-    //   else if (thisServerIp == '165.132.104.208') {
-    //       redisIp = '165.132.104.193';
-    //   }
-    //   else if (thisServerIp == '165.132.104.193') {
-    //       redisIp = '165.132.104.193';
-    //   }
-    //   else if (thisServerIp == '165.132.104.209') {
-    //       redisIp = '165.132.104.209';
-    //   }
-    //   else {
-    //       console.log("Wrong access IP!");
-    //   }
-    //   redisPool.connectClients(redisIp);
-    //   resolved();
-    // });
-    //
-    // promise
-    // .then(function(result){
-    //   return new Promise(function(resolved, rejected){
-    //     //기존에 redis에 있던 내용들 다 지워버려야 함
-    //     try {
-    //       redisPool.flushMemory();
-    //       resolved();
-    //     } catch (e) {
-    //       rejected("flush error!");
-    //     }
-    //   })
-    // }, function(err){
-    //     console.log(err);
-    // })
+    //monitoring 값 초기화
+    monitoring.cacheHit = 0;
+    monitoring.cacheMiss = 0;
+    monitoring.traffic = 0;
+    monitoring.readCount = 0;
+    monitoring.writeCount = 0;
+
+    /* db 에서 각 사용자에게 할당된 메모리 양 가지고 오기 */
+
+    var MAX_MEMORY = config.totalMemory;
+    var serverLocation;
+    var result = [];
+    var allUsersContents = [];
+    var userLocations = [];
+
+    var promise = new Promise(function(resolved, rejected){
+      var redisIp;
+      var thisServerIp = util.serverIp();
+      if(thisServerIp == '165.132.104.210') {
+          redisIp = '165.132.104.210';
+      }
+      else if (thisServerIp == '165.132.104.208') {
+          redisIp = '165.132.104.193';
+      }
+      else if (thisServerIp == '165.132.104.193') {
+          redisIp = '165.132.104.193';
+      }
+      else if (thisServerIp == '165.132.104.209') {
+          redisIp = '165.132.104.209';
+      }
+      else {
+          console.log("Wrong access IP!");
+      }
+      redisPool.connectClients(redisIp);
+      resolved();
+    });
+
+    promise
+    .then(function(result){
+      return new Promise(function(resolved, rejected){
+        //기존에 redis에 있던 내용들 다 지워버려야 함
+        try {
+          redisPool.flushMemory();
+          resolved();
+        } catch (e) {
+          rejected("flush error!");
+        }
+      })
+    }, function(err){
+        console.log(err);
+    })
     // .then(function(result){
     //   return new Promise(function(resolved, rejected){
     //     //이때 현재 서버의 IP에 따라 어떤 테이블의 내용을 넣을지 결정해야한다.
