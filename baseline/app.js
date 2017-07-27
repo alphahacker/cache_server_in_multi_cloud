@@ -312,7 +312,7 @@ var init = function() {
                   rejected("DB err!");
                 }
                 else {
-                  var key = user[i];
+                  var key = users[i];
                   var friendList = rows;
                   // console.log("!!!!");
                   // console.log(rows);
