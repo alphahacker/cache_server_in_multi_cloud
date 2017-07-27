@@ -17,6 +17,7 @@ var memoryManager = require('../src/memoryManager.js');
 var util = require('../src/util.js');
 var config = require('../src/configs.js');
 var monitoring = require('../src/monitoring.js');
+var coord = require('../src/coord.js');
 
 var app = express();
 
