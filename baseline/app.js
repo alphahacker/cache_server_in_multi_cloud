@@ -81,7 +81,7 @@ var init = function() {
           redisIp = '165.132.104.210';
       }
       else if (thisServerIp == '165.132.104.208') {
-          redisIp = '165.132.104.193';
+          redisIp = '165.132.104.208';
       }
       else if (thisServerIp == '165.132.104.193') {
           redisIp = '165.132.104.193';

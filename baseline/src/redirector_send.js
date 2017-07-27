@@ -16,26 +16,22 @@ var redirect = {
     for(var i=0; i<ipList.length; i++){
         var deliverData = function(index){
 						if(ipList[index] != thisServerIp){
-								//'165.132.104.208', '165.132.104.193'
-								if((thisServerIp == '165.132.104.193' && ipList[index] == '165.132.104.208') || (thisServerIp == '165.132.104.208' && ipList[index] == '165.132.104.193')) {
-								} else {
-									console.log("thisServerIp = " + thisServerIp);
-									console.log("ipList["+index+"] = " + ipList[index]);
-									request.post({
-	                    url: 'http://' + ipList[index] + '/redirector',
-	                    form: { contentList : tweetObjectList }
-	                },
-	                function (err, httpResponse, body) {
-										if(err){
-											error_log.debug("fail to send redirect! ");
-			                error_log.debug();
-											throw err;
-										}
-										if(index == (ipList.length - 1))	operation_log.info();
 
-										return httpResponse;
-	                });
-								}
+								request.post({
+                    url: 'http://' + ipList[index] + '/redirector',
+                    form: { contentList : tweetObjectList }
+                },
+                function (err, httpResponse, body) {
+									if(err){
+										error_log.debug("fail to send redirect! ");
+		                error_log.debug();
+										throw err;
+									}
+									if(index == (ipList.length - 1))	operation_log.info();
+
+									return httpResponse;
+                });
+
             }
         }(i);
     }
