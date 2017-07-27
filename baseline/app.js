@@ -304,6 +304,8 @@ var init = function() {
             //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
             dbPool.getConnection(function(err, conn) {
               var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + user[i] + '"';
+              console.log("!!!!");
+              console.log(query_stmt);
               conn.query(query_stmt, function(err, rows) {
                 conn.release();
                 if(err){
@@ -312,6 +314,10 @@ var init = function() {
                 else {
                   var key = user[i];
                   var friendList = rows;
+                  console.log("!!!!");
+                  console.log(rows);
+                  console.log("!!!!");
+                  console.log(friendList);
                   for(var j=0; j<friendList.length; j++){
                     var setContentList = function(friendIndex){
                       var value = friendList[friendIndex];
