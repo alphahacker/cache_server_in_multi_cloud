@@ -304,8 +304,6 @@ router.get('/init', function(req, res, next) {
           //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
           dbPool.getConnection(function(err, conn) {
             var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + users[i] + '"';
-            //console.log("!!!!");
-            //console.log(query_stmt);
             conn.query(query_stmt, function(err, rows) {
               conn.release();
               if(err){
@@ -314,17 +312,11 @@ router.get('/init', function(req, res, next) {
               else {
                 var key = users[i];
                 var friendList = rows;
-                // console.log("!!!!");
-                // console.log(rows);
-                // console.log("!!!!");
-                // console.log(friendList);
                 for(var j=0; j<friendList.length; j++){
                   var setContentList = function(friendIndex){
                     var value = friendList[friendIndex].friendId;
-                    // console.log(friendIndex);
-                    // console.log(friendList[friendIndex]);
                     console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
-                    redisPool.friendListMemory.lpush(key,value, function (err) {
+                    redisPool.friendListMemory.lpush(key, value, function (err) {
                         if(err) rejected("fail to set the friend list memory in Redis");
                     });
                   }(j);
