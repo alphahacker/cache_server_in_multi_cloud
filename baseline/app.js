@@ -159,7 +159,7 @@ var init = function() {
             var value = MAX_MEMORY * result[i].friendPortion;
             redisPool.socialMemory.set(key, value, function (err) {
                 if(err) rejected("fail to initialize the social memory in Redis");
-                //console.log("["+ i +"] key : " + key + ", value : " + value);
+                console.log("["+ i +"] key : " + key + ", value : " + value);
                 setSocialMemoryInRedis(i+1, callback);
             });
           }
@@ -298,14 +298,14 @@ var init = function() {
     .then(function(users){
       return new Promise(function(resolved, rejected){
         var setUserFriendsInRedis = function(i, callback){
-          if(i >= allUsersContents.length){
+          if(i >= users.length){
             callback();
           } else {
             //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
             dbPool.getConnection(function(err, conn) {
               var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + user[i] + '"';
-              console.log("!!!!");
-              console.log(query_stmt);
+              //console.log("!!!!");
+              //console.log(query_stmt);
               conn.query(query_stmt, function(err, rows) {
                 conn.release();
                 if(err){
@@ -314,10 +314,10 @@ var init = function() {
                 else {
                   var key = user[i];
                   var friendList = rows;
-                  console.log("!!!!");
-                  console.log(rows);
-                  console.log("!!!!");
-                  console.log(friendList);
+                  // console.log("!!!!");
+                  // console.log(rows);
+                  // console.log("!!!!");
+                  // console.log(friendList);
                   for(var j=0; j<friendList.length; j++){
                     var setContentList = function(friendIndex){
                       var value = friendList[friendIndex];
