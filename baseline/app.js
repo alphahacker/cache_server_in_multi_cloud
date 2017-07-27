@@ -320,9 +320,9 @@ var init = function() {
                   // console.log(friendList);
                   for(var j=0; j<friendList.length; j++){
                     var setContentList = function(friendIndex){
-                      var value = friendList[friendIndex];
-                      console.log(friendIndex);
-                      console.log(friendList[friendIndex]);
+                      var value = friendList[friendIndex].friendId;
+                      // console.log(friendIndex);
+                      // console.log(friendList[friendIndex]);
                       console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
                       redisPool.friendListMemory.lpush(key,value, function (err) {
                           if(err) rejected("fail to set the friend list memory in Redis");
