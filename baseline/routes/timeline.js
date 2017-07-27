@@ -295,6 +295,10 @@ router.post('/:userId', function(req, res, next) {
         } else {
           dbPool.getConnection(function(err, conn) {
               var query_stmt = 'SELECT id FROM user WHERE userId = "' + friendList[i].friendId + '"'
+              console.log(friendList);
+              console.log(friendList[i]);
+              console.log(friendList[i].friendId);
+              console.log(query_stmt);
               conn.query(query_stmt, function(err, result) {
                   if(err) {
                      error_log.debug("Query Stmt = " + query_stmt);
