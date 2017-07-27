@@ -303,7 +303,7 @@ var init = function() {
           } else {
             //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
             dbPool.getConnection(function(err, conn) {
-              var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + user[i] + '"';
+              var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + users[i] + '"';
               //console.log("!!!!");
               //console.log(query_stmt);
               conn.query(query_stmt, function(err, rows) {
