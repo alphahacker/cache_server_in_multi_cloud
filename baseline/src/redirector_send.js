@@ -19,6 +19,8 @@ var redirect = {
 								//'165.132.104.208', '165.132.104.193'
 								if((thisServerIp == '165.132.104.193' && ipList[index] == '165.132.104.208') || (thisServerIp == '165.132.104.208' && ipList[index] == '165.132.104.193')) {
 								} else {
+									console.log("thisServerIp = " + thisServerIp);
+									console.log("ipList["+index+"] = " + ipList[index]);
 									request.post({
 	                    url: 'http://' + ipList[index] + '/redirector',
 	                    form: { contentList : tweetObjectList }
