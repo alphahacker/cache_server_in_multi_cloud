@@ -15,6 +15,7 @@ var redisPool = require('../src/caching.js');
 var redirect = require('../src/redirector_send.js');
 var memoryManager = require('../src/memoryManager.js');
 var util = require('../src/util.js');
+var config = require('../src/configs.js');
 var monitoring = require('../src/monitoring.js');
 
 var app = express();
