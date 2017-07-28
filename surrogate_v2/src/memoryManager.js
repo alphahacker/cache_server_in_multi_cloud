@@ -25,69 +25,58 @@ var memoryManager = {
 					});
 				}
 				else{
-					var promise = new Promise(function(resolved, rejected){
-						//interim_log.info("[Current remain memory < 0] = " + currRemainMemory);
-						//1. 해당 유저의 index 메모리 값들 가지고 오기
-						memoryManager.getUserIndexMemory(userId, function(userContents){
-							resolved(userContents);
-						});
-					});
 
-					promise
-					.then(function(userContents){
-						return new Promise(function(resolved, rejected){
-							if(userContents == null || userContents.length == 0){
-								var extractedIndexList = [];
-								resolved();
-							} else {
-								//2. 추출되어야하는 데이터 리스트 가지고 오기
-								var extractedIndexList = [];
-								memoryManager.getExtIndexList(userContents, extractedIndexList, currRemainMemory, function(){
-									//interim_log.info("[Extracted Index List] = " + extractedIndexList);
-									resolved(extractedIndexList);
-								});
-							}
-						})
-					}, function(err){
-							console.log(err);
-					})
-					.then(function(extractedIndexList){
-						return new Promise(function(resolved, rejected){
-							if(extractedIndexList.length == 0){
-								resolved();
-							}
-							else {
-								for(var i=0; i<extractedIndexList.length; i++){
-									var removeData = function(j){
-										redisPool.dataMemory.del(extractedIndexList[j].index, function(err, response) {
-											if(err)	{
-												error_log.info("delete data error! : " + err);
-												error_log.info("key : " + extractedIndexList[j].index + "\n");
-												rejected("delete data error!! ");
-											}
-											else {
-													var updatedMemory;
-													updatedMemory = currRemainMemory + extractedIndexList[j].data.length;
-													memoryManager.setUserMemory(userId, updatedMemory, function(){
-														if(j == (extractedIndexList.length - 1)) {
-															//interim_log.info("[Deleted Successfully] currRemainMemory = " + currRemainMemory
-															//																		+ ", extractedList[" + j + "].data.length = " + extractedIndexList[j].data.length
-															//																	 	+ ", updatedMemory = " + updatedMemory);
-															memoryManager.setDataInMemory(tweetObject, updatedMemory);
-															resolved();
-														}
-													});
-											}
-										})
-									}(i);
-
-								} // end for
-							} // end else
-
-						})
-					}, function(err){
-							console.log(err);
-					})
+					// var promise = new Promise(function(resolved, rejected){
+					// 	//interim_log.info("[Current remain memory < 0] = " + currRemainMemory);
+					// 	//1. 해당 유저의 index 메모리 값들 가지고 오기
+					// 	memoryManager.getUserIndexMemory(userId, function(userContents){
+					// 		resolved(userContents);
+					// 	});
+					// });
+					//
+					// promise
+					// .then(function(userContents){
+					// 	return new Promise(function(resolved, rejected){
+					// 		//2. 추출되어야하는 데이터 리스트 가지고 오기
+					// 		var extractedIndexList = [];
+					// 		memoryManager.getExtIndexList(userContents, extractedIndexList, currRemainMemory, function(){
+					// 			//interim_log.info("[Extracted Index List] = " + extractedIndexList);
+					// 			resolved(extractedIndexList);
+					// 		});
+					// 	})
+					// }, function(err){
+					// 		console.log(err);
+					// })
+					// .then(function(extractedIndexList){
+					// 	return new Promise(function(resolved, rejected){
+					// 		for(var i=0; i<extractedIndexList.length; i++){
+					// 			var removeData = function(j){
+					// 				redisPool.dataMemory.del(extractedIndexList[j].index, function(err, response) {
+					// 					if(err)	{
+					// 						error_log.info("delete data error! : " + err);
+					// 						error_log.info("key : " + extractedIndexList[j].index + "\n");
+					// 						rejected("delete data error!! ");
+					// 					}
+					// 					else {
+					// 							var updatedMemory;
+					// 							updatedMemory = currRemainMemory + extractedIndexList[j].data.length;
+					// 							memoryManager.setUserMemory(userId, updatedMemory, function(){
+					// 								if(j == (extractedIndexList.length - 1)) {
+					// 									//interim_log.info("[Deleted Successfully] currRemainMemory = " + currRemainMemory
+					// 									//																		+ ", extractedList[" + j + "].data.length = " + extractedIndexList[j].data.length
+					// 									//																	 	+ ", updatedMemory = " + updatedMemory);
+					// 									memoryManager.setDataInMemory(tweetObject, updatedMemory);
+					// 									resolved();
+					// 								}
+					// 							});
+					// 					}
+					// 				})
+					// 			}(i);
+					// 		} // end for
+					// 	})
+					// }, function(err){
+					// 		console.log(err);
+					// })
 				} // end else
 			})
 		} catch (e) {
@@ -111,8 +100,6 @@ var memoryManager = {
 		      dbPool.getConnection(function(err, conn) {
 				      var query_stmt = 'SELECT * FROM ' + util.getServerLocation() + ' WHERE id = "' + key + '"';
 				      conn.query(query_stmt, function(err, rows) {
-									conn.release();
-
 		  			      if(err) {
 										 error_log.info("fail to get user memory from MySQL : " + err);
 										 error_log.info("QUERY STMT = " + query_stmt);
@@ -125,7 +112,7 @@ var memoryManager = {
 											remainMemory = value;
 						          redisPool.socialMemory.set(key, value, function (err) {
 													error_log.info("!!! Reset data in social memory (cuz, there's no in redis) : " + value);
-													//conn.release();
+													conn.release();
 													cb(remainMemory);
 						          });
 					        }
@@ -158,7 +145,7 @@ var memoryManager = {
 		var contentList = [];
 
 		var key = userId;
-		var start = -2;
+		var start = 0;
 		var end = -1;
 		redisPool.indexMemory.lrange(key, start, end, function (err, result) {
 				if(err){

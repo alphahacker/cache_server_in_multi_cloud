@@ -81,7 +81,7 @@ var init = function() {
           redisIp = '165.132.104.210';
       }
       else if (thisServerIp == '165.132.104.208') {
-          redisIp = '165.132.104.193';
+          redisIp = '165.132.104.208';
       }
       else if (thisServerIp == '165.132.104.193') {
           redisIp = '165.132.104.193';
@@ -110,280 +110,351 @@ var init = function() {
     }, function(err){
         console.log(err);
     })
-    .then(function(result){
-      return new Promise(function(resolved, rejected){
-        //이때 현재 서버의 IP에 따라 어떤 테이블의 내용을 넣을지 결정해야한다.
-        //예를들어, newyork에 있는 서버라면, newyork 테이블의 내용을 가져와야함.
-        serverLocation = util.getServerLocation();
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
-
-    /**************************************************************************/
-    /************************** social memory 초기화 ****************************/
-    /**************************************************************************/
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        //MySQL에 있는 각 지역(Newyork, Texas, Washington)의 UserId, FriendPortion에 관한 내용 Redis의 Social Memory에 올려야함.
-        dbPool.getConnection(function(err, conn) {
-            var query_stmt = 'SELECT * FROM ' + serverLocation;
-            console.log(query_stmt);
-            conn.query(query_stmt, function(err, rows) {
-                conn.release(); //MySQL connection release
-                if(err) {
-                   rejected("DB err!");
-                }
-                for (var i=0; i<rows.length; i++) {
-                    result.push({
-                        userId : rows[i].userId,
-                        friendPortion : rows[i].friendPortion
-                    });
-                }
-                //conn.release(); //MySQL connection release
-                resolved();
-            })
-
-            // conn.query(query_stmt, function(err, rows){});
-            // query.on('error', function(err) {
-            //     logger.error('Mysql query error: ' + err);
-            //     callback(err, true);
-            // });
-            // query.on('result', function(rows) {
-            //     callback(false, rows);
-            // });
-            // query.on('end', function() {
-            //     connection.release();
-            // });
-
-
-        });
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        var setSocialMemoryInRedis = function(i, callback){
-          if(i >= result.length){
-            callback();
-          } else {
-            //key는 사용자 ID 이고, value는 전체 메모리 양 * portion
-            var key = result[i].userId;
-            var value = MAX_MEMORY * result[i].friendPortion;
-            redisPool.socialMemory.set(key, value, function (err) {
-                if(err) rejected("fail to initialize the social memory in Redis");
-                console.log("["+ i +"] key : " + key + ", value : " + value);
-                setSocialMemoryInRedis(i+1, callback);
-            });
-          }
-        }
-
-        setSocialMemoryInRedis(0, function(){
-          resolved();
-        })
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        console.log("social memory ready");
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
-
-    /**************************************************************************/
-    /************************** index memory 초기화 *****************************/
-    /**************************************************************************/
-
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        var getUsersContentsFromDB = function(i, callback){
-          var userContents = {};
-
-          if(i >= result.length){
-            callback();
-
-          } else {
-            dbPool.getConnection(function(err, conn) {
-              var userId = result[i].userId;
-              userContents.userId = userId;
-
-              var contentIdList = [];
-              var query_stmt = 'SELECT A.contentId FROM timeline A ' +
-                               'JOIN user B ' +
-                               'ON A.uid = B.id ' +
-                               'WHERE B.userId = "' + userId + '"';
-              conn.query(query_stmt, function(err, rows) {
-                conn.release(); //MySQL connection release
-                if(err) rejected("DB err!");
-
-                for (var j=0; j<rows.length; j++) {
-                    contentIdList.push(rows[j].contentId);
-                }
-
-                if(rows.length != 0) {
-                  userContents.contentIdList = contentIdList;
-                  allUsersContents.push(userContents);
-                }
-
-                getUsersContentsFromDB(i+1, callback);
-                //conn.release(); //MySQL connection release
-              })
-            });
-          }
-        }
-
-        getUsersContentsFromDB(0, function(){
-          resolved();
-        })
-
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        var setIndexMemoryInRedis = function(i, callback){
-          if(i >= allUsersContents.length){
-            callback();
-          } else {
-            var key = allUsersContents[i].userId;
-            var contentList = allUsersContents[i].contentIdList;
-
-            for(var j=0; j<contentList.length; j++){
-              var setContentList = function(contentIndex){
-                var value = contentList[contentIndex];
-                redisPool.indexMemory.lpush(key,value, function (err) {
-                    if(err) rejected("fail to set the index memory in Redis");
-                });
-              }(j);
-            }
-            setIndexMemoryInRedis(i+1, callback);
-          }
-        }
-
-        setIndexMemoryInRedis(0, function(){
-          resolved();
-        })
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        console.log("index memory ready");
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
-
-    /**************************************************************************/
-    /************************** User Location 초기화 ****************************/
-    /**************************************************************************/
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        dbPool.getConnection(function(err, conn) {
-            var query_stmt = 'SELECT userId, userLocation FROM user';
-            conn.query(query_stmt, function(err, rows) {
-                conn.release(); //MySQL connection release
-                if(err) {
-                   rejected("DB err!");
-                }
-                for (var i=0; i<rows.length; i++) {
-                    userLocations.push({
-                        userId : rows[i].userId,
-                        userLocation : rows[i].userLocation
-                    });
-                }
-                //conn.release(); //MySQL connection release
-                resolved();
-            })
-        });
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        var setUserLocationInRedis = function(i, callback){
-          if(i >= userLocations.length){
-            callback();
-          } else {
-            var key = userLocations[i].userId;
-            var value = userLocations[i].userLocation;
-            redisPool.locationMemory.set(key, value, function (err) {
-                if(err) rejected("fail to initialize user location memory in Redis");
-                //console.log("["+ i +"] key : " + key + ", value : " + value);
-                setUserLocationInRedis(i+1, callback);
-            });
-          }
-        }
-
-        setUserLocationInRedis(0, function(){
-          resolved();
-        })
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        console.log("user location memory ready");
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
-
-    /**************************************************************************/
-    /************************** coord information *****************************/
-    /**************************************************************************/
-
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        dbPool.getConnection(function(err, conn) {
-            var query_stmt = 'SELECT * FROM coord';
-            conn.query(query_stmt, function(err, rows) {
-                conn.release(); //MySQL connection release
-                if(err) {
-                   rejected("DB err!");
-                }
-                for (var i=0; i<rows.length; i++) {
-                    coord[rows[i].location] = {
-                      lat : rows[i].lat,
-                      lng : rows[i].lng
-                    };
-                }
-                //conn.release(); //MySQL connection release
-                resolved();
-            })
-        });
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        console.log("coord information ready");
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
-    .then(function(){
-      return new Promise(function(resolved, rejected){
-        console.log("surrogate server [" + serverLocation + "] is ready, completely.");
-        resolved();
-      })
-    }, function(err){
-        console.log(err);
-    })
+    // .then(function(result){
+    //   return new Promise(function(resolved, rejected){
+    //     //이때 현재 서버의 IP에 따라 어떤 테이블의 내용을 넣을지 결정해야한다.
+    //     //예를들어, newyork에 있는 서버라면, newyork 테이블의 내용을 가져와야함.
+    //     serverLocation = util.getServerLocation();
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    //
+    // /**************************************************************************/
+    // /************************** social memory 초기화 ****************************/
+    // /**************************************************************************/
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     //MySQL에 있는 각 지역(Newyork, Texas, Washington)의 UserId, FriendPortion에 관한 내용 Redis의 Social Memory에 올려야함.
+    //     dbPool.getConnection(function(err, conn) {
+    //         var query_stmt = 'SELECT * FROM ' + serverLocation;
+    //         console.log(query_stmt);
+    //         conn.query(query_stmt, function(err, rows) {
+    //             if(err) {
+    //                rejected("DB err!");
+    //             }
+    //             for (var i=0; i<rows.length; i++) {
+    //                 result.push({
+    //                     userId : rows[i].userId,
+    //                     friendPortion : rows[i].friendPortion
+    //                 });
+    //             }
+    //             conn.release(); //MySQL connection release
+    //             resolved();
+    //         })
+    //     });
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     var setSocialMemoryInRedis = function(i, callback){
+    //       if(i >= result.length){
+    //         callback();
+    //       } else {
+    //         //key는 사용자 ID 이고, value는 전체 메모리 양 * portion
+    //         var key = result[i].userId;
+    //         var value = MAX_MEMORY * result[i].friendPortion;
+    //         redisPool.socialMemory.set(key, value, function (err) {
+    //             if(err) rejected("fail to initialize the social memory in Redis");
+    //             console.log("["+ i +"] key : " + key + ", value : " + value);
+    //             setSocialMemoryInRedis(i+1, callback);
+    //         });
+    //       }
+    //     }
+    //
+    //     setSocialMemoryInRedis(0, function(){
+    //       resolved();
+    //       setSocialMemoryInRedis = null;
+    //     })
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("social memory ready");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    //
+    // /**************************************************************************/
+    // /************************** index memory 초기화 *****************************/
+    // /**************************************************************************/
+    //
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     var getUsersContentsFromDB = function(i, callback){
+    //       var userContents = {};
+    //
+    //       if(i >= result.length){
+    //         callback();
+    //
+    //       } else {
+    //         dbPool.getConnection(function(err, conn) {
+    //           var userId = result[i].userId;
+    //           userContents.userId = userId;
+    //
+    //           var contentIdList = [];
+    //           var query_stmt = 'SELECT A.contentId FROM timeline A ' +
+    //                            'JOIN user B ' +
+    //                            'ON A.uid = B.id ' +
+    //                            'WHERE B.userId = "' + userId + '"';
+    //           conn.query(query_stmt, function(err, rows) {
+    //             if(err) rejected("DB err!");
+    //
+    //             for (var j=0; j<rows.length; j++) {
+    //                 contentIdList.push(rows[j].contentId);
+    //             }
+    //
+    //             if(rows.length != 0) {
+    //               userContents.contentIdList = contentIdList;
+    //               allUsersContents.push(userContents);
+    //             }
+    //
+    //             getUsersContentsFromDB(i+1, callback);
+    //             conn.release(); //MySQL connection release
+    //           })
+    //         });
+    //       }
+    //     }
+    //
+    //     getUsersContentsFromDB(0, function(){
+    //       resolved();
+    //       getUsersContentsFromDB = null;
+    //     })
+    //
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     var setIndexMemoryInRedis = function(i, callback){
+    //       if(i >= allUsersContents.length){
+    //         callback();
+    //       } else {
+    //         var key = allUsersContents[i].userId;
+    //         var contentList = allUsersContents[i].contentIdList;
+    //
+    //         for(var j=0; j<contentList.length; j++){
+    //           var setContentList = function(contentIndex){
+    //             var value = contentList[contentIndex];
+    //             redisPool.indexMemory.lpush(key,value, function (err) {
+    //                 if(err) rejected("fail to set the index memory in Redis");
+    //             });
+    //           }(j);
+    //         }
+    //         setIndexMemoryInRedis(i+1, callback);
+    //       }
+    //     }
+    //
+    //     setIndexMemoryInRedis(0, function(){
+    //       resolved();
+    //       setIndexMemoryInRedis = null;
+    //     })
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("index memory ready");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    //
+    //
+    //
+    // /**************************************************************************/
+    // /*********************** friend list memory 초기화 **************************/
+    // /**************************************************************************/
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     var users = [];
+    //     dbPool.getConnection(function(err, conn) {
+    //       var query_stmt = 'SELECT userId FROM user';
+    //       conn.query(query_stmt, function(err, rows) {
+    //         conn.release(); //MySQL connection release
+    //
+    //         if(err) rejected("DB err!");
+    //
+    //         for (var j=0; j<rows.length; j++) {
+    //             users.push(rows[j].userId);
+    //         }
+    //         resolved(users);
+    //       })
+    //     });
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(users){
+    //   return new Promise(function(resolved, rejected){
+    //     var setUserFriendsInRedis = function(i, callback){
+    //       if(i >= users.length){
+    //         callback();
+    //       } else {
+    //         //여기서 DB에서 user[i] 값으로 프렌드리스트 불러오고 그 값들을 모두 레디스에 넣는다.
+    //         dbPool.getConnection(function(err, conn) {
+    //           var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + users[i] + '"';
+    //           //console.log("!!!!");
+    //           //console.log(query_stmt);
+    //           conn.query(query_stmt, function(err, rows) {
+    //             conn.release();
+    //             if(err){
+    //               rejected("DB err!");
+    //             }
+    //             else {
+    //               var key = users[i];
+    //               var friendList = rows;
+    //               // console.log("!!!!");
+    //               // console.log(rows);
+    //               // console.log("!!!!");
+    //               // console.log(friendList);
+    //               for(var j=0; j<friendList.length; j++){
+    //                 var setContentList = function(friendIndex){
+    //                   var value = friendList[friendIndex].friendId;
+    //                   // console.log(friendIndex);
+    //                   // console.log(friendList[friendIndex]);
+    //                   console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
+    //                   redisPool.friendListMemory.lpush(key,value, function (err) {
+    //                       if(err) rejected("fail to set the friend list memory in Redis");
+    //                   });
+    //                 }(j);
+    //               }
+    //               setUserFriendsInRedis(i+1, callback);
+    //             }
+    //           });
+    //         });
+    //       }
+    //     }
+    //
+    //     setUserFriendsInRedis(0, function(){
+    //       resolved();
+    //       setUserFriendsInRedis = null;
+    //     })
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("friend list memory ready");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    //
+    //
+    //
+    // /**************************************************************************/
+    // /************************** User Location 초기화 ****************************/
+    // /**************************************************************************/
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     dbPool.getConnection(function(err, conn) {
+    //         var query_stmt = 'SELECT userId, userLocation FROM user';
+    //         conn.query(query_stmt, function(err, rows) {
+    //             if(err) {
+    //                rejected("DB err!");
+    //             }
+    //             for (var i=0; i<rows.length; i++) {
+    //                 userLocations.push({
+    //                     userId : rows[i].userId,
+    //                     userLocation : rows[i].userLocation
+    //                 });
+    //             }
+    //             conn.release(); //MySQL connection release
+    //             resolved();
+    //         })
+    //     });
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     var setUserLocationInRedis = function(i, callback){
+    //       if(i >= userLocations.length){
+    //         callback();
+    //       } else {
+    //         var key = userLocations[i].userId;
+    //         var value = userLocations[i].userLocation;
+    //         redisPool.locationMemory.set(key, value, function (err) {
+    //             if(err) rejected("fail to initialize user location memory in Redis");
+    //             //console.log("["+ i +"] key : " + key + ", value : " + value);
+    //             setUserLocationInRedis(i+1, callback);
+    //         });
+    //       }
+    //     }
+    //
+    //     setUserLocationInRedis(0, function(){
+    //       resolved();
+    //       setUserLocationInRedis = null;
+    //     })
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("user location memory ready");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    //
+    // /**************************************************************************/
+    // /************************** coord information *****************************/
+    // /**************************************************************************/
+    //
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     dbPool.getConnection(function(err, conn) {
+    //         var query_stmt = 'SELECT * FROM coord';
+    //         conn.query(query_stmt, function(err, rows) {
+    //             if(err) {
+    //                rejected("DB err!");
+    //             }
+    //             for (var i=0; i<rows.length; i++) {
+    //                 coord[rows[i].location] = {
+    //                   lat : rows[i].lat,
+    //                   lng : rows[i].lng
+    //                 };
+    //             }
+    //             conn.release(); //MySQL connection release
+    //             resolved();
+    //         })
+    //     });
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("coord information ready");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
+    // .then(function(){
+    //   return new Promise(function(resolved, rejected){
+    //     console.log("surrogate server [" + serverLocation + "] is ready, completely.");
+    //     resolved();
+    //   })
+    // }, function(err){
+    //     console.log(err);
+    // })
 }();
 
 //----------------------------------------------------------------//

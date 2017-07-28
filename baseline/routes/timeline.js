@@ -663,22 +663,6 @@ router.post('/:userId', function(req, res, next) {
           friendList = result;
           resolved(friendList);
       });
-      // var friendList = [];
-      // dbPool.getConnection(function(err, conn) {
-      //     var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
-      //     conn.query(query_stmt, function(err, rows) {
-      //         if(err) {
-      //           error_log.info("fail to get friendList (MySQL) : " + err);
-      //           error_log.info("QUERY STMT : " + query_stmt);
-      //           rejected("fail to extract friend id list from origin server!");
-      //         }
-      //         for (var i=0; i<rows.length; i++) {
-      //             friendList.push(rows[i].friendId);
-      //         }
-      //         conn.release(); //MySQL connection release
-      //         resolved(friendList);
-      //     })
-      // });
   });
 
   //3-1. origin server에 있는 mysql의 content에 모든 친구들에 대해서 데이터를 넣는다. 이 때, lastInsertId를 이용해서 contentId를 만듦.
@@ -686,14 +670,11 @@ router.post('/:userId', function(req, res, next) {
   .then(function(friendList){
     return new Promise(function(resolved, rejected){
       var pushTweetInOriginDB = function(i, callback){
-        // console.log("userId = " + req.params.userId);
-        // console.log("friendList.length = " + friendList.length);
         if(i >= friendList.length){
           callback();
         } else {
           dbPool.getConnection(function(err, conn) {
               var query_stmt = 'SELECT id FROM user WHERE userId = "' + friendList[i] + '"';
-              //console.log(query_stmt);
               conn.query(query_stmt, function(err, result) {
                   if(err) {
                      error_log.debug("Query Stmt = " + query_stmt);
@@ -743,58 +724,6 @@ router.post('/:userId', function(req, res, next) {
   }, function(err){
       console.log(err);
   })
-
-  //3-2. origin server에 있는 mysql의 timeline에, 모든 친구들에 대해서 데이터를 넣는다.
-  // .then(function(){
-  //   return new Promise(function(resolved, rejected){
-  //     var pushIndexInOriginDB = function(i, callback){
-  //       if(i >= tweetObjectList.length){
-  //         callback();
-  //       } else {
-  //         dbPool.getConnection(function(err, conn) {
-  //             var query_stmt = 'SELECT id FROM user WHERE userId = "' + tweetObjectList[i].userId + '"';
-  //             conn.query(query_stmt, function(err, result) {
-  //                 if(err) {
-  //                    error_log.debug("Query Stmt = " + query_stmt);
-  //                    error_log.debug("ERROR MSG = " + err);
-  //                    error_log.debug();
-  //                    rejected("DB err!");
-  //                 }
-  //                 conn.release(); //MySQL connection release
-  //                 var userPkId = result[0].id;
-  //                 //////////////////////////////////////////////////////////////
-  //                 dbPool.getConnection(function(err, conn) {
-  //                     var query_stmt2 = 'INSERT INTO timeline (uid, contentId) VALUES (' + userPkId + ', ' + tweetObjectList[i].contentId + ')'
-  //                     conn.query(query_stmt2, function(err, result) {
-  //                         if(err) {
-  //                            error_log.debug("Query Stmt = " + query_stmt);
-  //                            error_log.debug("ERROR MSG = " + err);
-  //                            error_log.debug();
-  //                            rejected("DB err!");
-  //                         }
-  //                         if(result == undefined || result == null){
-  //                             error_log.debug("Query Stmt = " + query_stmt2);
-  //                             error_log.debug("Query Result = " + result);
-  //                         }
-  //
-  //                         conn.release();
-  //                         pushIndexInOriginDB(i+1, callback);
-  //                     });
-  //                 });
-  //                 //////////////////////////////////////////////////////////////
-  //             })
-  //         });
-  //       }
-  //     }
-  //
-  //     pushIndexInOriginDB(0, function(){
-  //       resolved();
-  //       pushIndexInOriginDB = null;
-  //     })
-  //   })
-  // }, function(err){
-  //     console.log(err);
-  // })
 
   //4. 다른 surrogate 서버로 redirect
   .then(function(){
@@ -858,12 +787,6 @@ router.post('/:userId', function(req, res, next) {
       }
 
       pushTweetInDataMemory(0, function(){
-        res.json({
-          "status" : "OK"
-        })
-        operation_log.info("[Write Operation Count]= " + ++monitoring.writeCount + "\n");
-        //operation_log.info("[Write Traffic]= " + (monitoring.writeCount * req.body.contentData.length) + "B");
-        //operation_log.info();
         resolved();
         pushTweetInDataMemory = null;
       })
@@ -872,37 +795,35 @@ router.post('/:userId', function(req, res, next) {
       console.log(err);
   })
 
-  // .then(function(){
-  //   return new Promise(function(resolved, rejected){
-  //     pushTweetInDataMemory = function(i, callback){
-  //       if(i >= tweetObjectList.length){
-  //         callback();
-  //       } else {
-  //
-  //         //memoryManager에서 메모리 상태를 보고, 아직 공간이 있는지 없는지 확인한다
-  //         /*
-  //           지금 redis.conf에 maxmemory-policy는 allkeys-lru로 해놨다. 최근에 가장 안쓰인 애들을 우선적으로 삭제하는 방식.
-  //           따라서 아래의 메모리 체크 함수 (checkMemory)는 우리가 제안하는 방식에서만 필요하고, baseline approach에서는 필요 없다.
-  //           baseline approach에서는 그냥, 가만히 놔두면 redis설정에 따라 오래된 애들을 우선적으로 지울듯. lru에 따라.
-  //         */
-  //         memoryManager.checkMemory(tweetObjectList[i]);
-  //         pushTweetInDataMemory(i+1, callback);
-  //       }
-  //     }
-  //
-  //     pushTweetInDataMemory(0, function(){
-  //       res.json({
-  //         "status" : "OK"
-  //       })
-  //       operation_log.info("[Write Operation Count]= " + ++monitoring.writeCount + "\n");
-  //       //operation_log.info("[Write Traffic]= " + (monitoring.writeCount * req.body.contentData.length) + "B");
-  //       //operation_log.info();
-  //       resolved();
-  //     })
-  //   })
-  // }, function(err){
-  //     console.log(err);
-  // })
+  .then(function(){
+    return new Promise(function(resolved, rejected){
+      pushTweetInDataMemory = function(i, callback){
+        if(i >= tweetObjectList.length){
+          callback();
+        } else {
+
+          //memoryManager에서 메모리 상태를 보고, 아직 공간이 있는지 없는지 확인한다
+          /*
+            지금 redis.conf에 maxmemory-policy는 allkeys-lru로 해놨다. 최근에 가장 안쓰인 애들을 우선적으로 삭제하는 방식.
+            따라서 아래의 메모리 체크 함수 (checkMemory)는 우리가 제안하는 방식에서만 필요하고, baseline approach에서는 필요 없다.
+            baseline approach에서는 그냥, 가만히 놔두면 redis설정에 따라 오래된 애들을 우선적으로 지울듯. lru에 따라.
+          */
+          memoryManager.checkMemory(tweetObjectList[i]);
+          pushTweetInDataMemory(i+1, callback);
+        }
+      }
+
+      pushTweetInDataMemory(0, function(){
+        res.json({
+          "status" : "OK"
+        })
+        operation_log.info("[Write Operation Count]= " + ++monitoring.writeCount + "\n");
+        resolved();
+      })
+    })
+  }, function(err){
+      console.log(err);
+  })
 
 });
 
