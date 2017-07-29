@@ -852,7 +852,14 @@ router.post('/:userId', function(req, res, next) {
         if(i >= tweetObjectList.length){
           callback();
         } else {
-          memoryManager.setDataInMemory(tweetObjectList[i], 0);
+
+          //memoryManager에서 메모리 상태를 보고, 아직 공간이 있는지 없는지 확인한다
+          /*
+            지금 redis.conf에 maxmemory-policy는 allkeys-lru로 해놨다. 최근에 가장 안쓰인 애들을 우선적으로 삭제하는 방식.
+            따라서 아래의 메모리 체크 함수 (checkMemory)는 우리가 제안하는 방식에서만 필요하고, baseline approach에서는 필요 없다.
+            baseline approach에서는 그냥, 가만히 놔두면 redis설정에 따라 오래된 애들을 우선적으로 지울듯. lru에 따라.
+          */
+          memoryManager.checkMemory(tweetObjectList[i]);
           pushTweetInDataMemory(i+1, callback);
         }
       }
@@ -864,45 +871,14 @@ router.post('/:userId', function(req, res, next) {
         operation_log.info("[Write Operation Count]= " + ++monitoring.writeCount + "\n");
         //operation_log.info("[Write Traffic]= " + (monitoring.writeCount * req.body.contentData.length) + "B");
         //operation_log.info();
-        resolved();
+        tweetObjectList = null;
         pushTweetInDataMemory = null;
+        resolved();
       })
     })
   }, function(err){
       console.log(err);
   })
-
-  // .then(function(){
-  //   return new Promise(function(resolved, rejected){
-  //     pushTweetInDataMemory = function(i, callback){
-  //       if(i >= tweetObjectList.length){
-  //         callback();
-  //       } else {
-  //
-  //         //memoryManager에서 메모리 상태를 보고, 아직 공간이 있는지 없는지 확인한다
-  //         /*
-  //           지금 redis.conf에 maxmemory-policy는 allkeys-lru로 해놨다. 최근에 가장 안쓰인 애들을 우선적으로 삭제하는 방식.
-  //           따라서 아래의 메모리 체크 함수 (checkMemory)는 우리가 제안하는 방식에서만 필요하고, baseline approach에서는 필요 없다.
-  //           baseline approach에서는 그냥, 가만히 놔두면 redis설정에 따라 오래된 애들을 우선적으로 지울듯. lru에 따라.
-  //         */
-  //         memoryManager.checkMemory(tweetObjectList[i]);
-  //         pushTweetInDataMemory(i+1, callback);
-  //       }
-  //     }
-  //
-  //     pushTweetInDataMemory(0, function(){
-  //       res.json({
-  //         "status" : "OK"
-  //       })
-  //       operation_log.info("[Write Operation Count]= " + ++monitoring.writeCount + "\n");
-  //       //operation_log.info("[Write Traffic]= " + (monitoring.writeCount * req.body.contentData.length) + "B");
-  //       //operation_log.info();
-  //       resolved();
-  //     })
-  //   })
-  // }, function(err){
-  //     console.log(err);
-  // })
 
 });
 
