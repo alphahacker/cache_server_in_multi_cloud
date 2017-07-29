@@ -315,9 +315,9 @@ router.get('/init', function(req, res, next) {
                 for(var j=0; j<friendList.length; j++){
                   var setContentList = function(friendIndex){
                     var value = friendList[friendIndex].friendId;
-                    if(key == 'AgProud'){
-                    console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
-                    }
+                    // if(key == 'AgProud'){
+                    // console.log("[set friend list] User ID = " + key + ", Friend ID = " + value);
+                    // }
                     redisPool.friendListMemory.lpush(key, value, function (err) {
                         if(err) rejected("fail to set the friend list memory in Redis");
                     });
