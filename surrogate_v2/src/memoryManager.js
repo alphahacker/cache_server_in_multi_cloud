@@ -16,15 +16,18 @@ var memoryManager = {
 		try{
 			memoryManager.getUserMemory(userId, function(remainUserMemory){
 				//interim_log.info("[User Id]= " + userId);
+				console.log("[User Id]= " + userId);
 				var currRemainMemory = parseInt(remainUserMemory) - parseInt(dataSize);
 				if(currRemainMemory >= 0){
 					//interim_log.info("[Current remain memory > 0] = " + currRemainMemory);
 					//interim_log.info();
+					console.log("[Current remain memory > 0] = " + currRemainMemory);
 					memoryManager.setUserMemory(userId, currRemainMemory, function(){
 						memoryManager.setDataInMemory(tweetObject, currRemainMemory);
 					});
 				}
 				else{
+					console.log("[Current remain memory < 0] = " + currRemainMemory);
 
 					// var promise = new Promise(function(resolved, rejected){
 					// 	//interim_log.info("[Current remain memory < 0] = " + currRemainMemory);
@@ -96,6 +99,8 @@ var memoryManager = {
 
 		    //1. cache에 값이 있는지 검사한다
 		    if(value == undefined || value == null) {
+					console.log("social memory value is undefined or null");
+
 					remainMemory = 0;
 					cb(remainMemory);
 		      // //2-1. 없으면, mysql pool 로 db에 연결한다
@@ -138,6 +143,7 @@ var memoryManager = {
 					error_log.info("key (userId) : " + key + ", value (currMemory) : " + value);
 					error_log.info();
 				}
+				console.log("set social memory newly : key (userId) - " + key + ", value (currMemory) - " + value);
 				cb();
 		});
   },
