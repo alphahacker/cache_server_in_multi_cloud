@@ -26,7 +26,7 @@ redisClient.flushMemory = function () {
       console.log("data memory flush completed"); // will be true if successfull
   });
 
-  redisClient.dataMemory.flushdb( function (err, succeeded) {
+  redisClient.socialMemory.flushdb( function (err, succeeded) {
       if(err) throw err;
       console.log("social memory flush completed"); // will be true if successfull
   });
