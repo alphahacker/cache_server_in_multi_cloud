@@ -11,7 +11,7 @@ var interim_log = log4js.getLogger("interim");
 
 var memoryManager = {
 	checkMemory : function(tweetObject) {
-		var dataSize = tweetObject.content.length;
+		var dataSize = parseInt(tweetObject.content.length) + parseInt(tweetObject.contentId.length);
 		var userId = tweetObject.userId;
 		try{
 			memoryManager.getUserMemory(userId, function(remainUserMemory){
