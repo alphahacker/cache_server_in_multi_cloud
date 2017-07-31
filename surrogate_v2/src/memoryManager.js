@@ -11,10 +11,13 @@ var interim_log = log4js.getLogger("interim");
 
 var memoryManager = {
 	checkMemory : function(tweetObject) {
+		console.log("tweetObject.content.length = " + parseInt(tweetObject.content.length));
+		//console.log("tweetObject.contentId.length = " + parseInt(tweetObject.contentId.length));
+		console.log("after toString().length = " + tweetObject.contentId.toString().length);
+		var testSize = parseInt(tweetObject.content.length) + tweetObject.contentId.toString().length;
+		console.log("testSize = " + testSize);
 		var dataSize = parseInt(tweetObject.contentId.toString().length) + parseInt(tweetObject.contentId.length);
-		// console.log("tweetObject.content.length = " + parseInt(tweetObject.content.length));
-		// console.log("tweetObject.contentId.length = " + parseInt(tweetObject.contentId.length));
-		// console.log("after toString().length = " + tweetObject.contentId.toString().length);
+
 		console.log("dataSize = " + dataSize);
 
 		var userId = tweetObject.userId;
