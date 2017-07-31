@@ -11,13 +11,7 @@ var interim_log = log4js.getLogger("interim");
 
 var memoryManager = {
 	checkMemory : function(tweetObject) {
-		console.log("tweetObject.content.length = " + parseInt(tweetObject.content.length));
-		//console.log("tweetObject.contentId.length = " + parseInt(tweetObject.contentId.length));
-		console.log("after toString().length = " + tweetObject.contentId.toString().length);
-		var testSize = parseInt(tweetObject.content.length) + tweetObject.contentId.toString().length;
-		console.log("testSize = " + testSize);
-		var dataSize = parseInt(tweetObject.contentId.toString().length) + parseInt(tweetObject.contentId.length);
-
+		var dataSize = parseInt(tweetObject.content.length) + tweetObject.contentId.toString().length;
 		console.log("dataSize = " + dataSize);
 
 		var userId = tweetObject.userId;
@@ -26,6 +20,7 @@ var memoryManager = {
 				//interim_log.info("[User Id]= " + userId);
 				//console.log("[User Id]= " + userId);
 				var currRemainMemory = parseInt(remainUserMemory) - parseInt(dataSize);
+				console.log(currRemainMemory);
 				if(currRemainMemory >= 0){
 					//interim_log.info("[Current remain memory > 0] = " + currRemainMemory);
 					//interim_log.info();
