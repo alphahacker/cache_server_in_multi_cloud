@@ -14,8 +14,9 @@ var memoryManager = {
 		var dataSize = parseInt(tweetObject.content.length) + parseInt(tweetObject.contentId.length);
 		console.log("tweetObject.content.length = " + parseInt(tweetObject.content.length));
 		console.log("tweetObject.contentId.length = " + parseInt(tweetObject.contentId.length));
+		console.log("after toString().length = " + tweetObject.contentId.toString().length);
 		console.log("dataSize = " + dataSize);
-		
+
 		var userId = tweetObject.userId;
 		try{
 			memoryManager.getUserMemory(userId, function(remainUserMemory){
