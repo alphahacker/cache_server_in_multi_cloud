@@ -598,7 +598,7 @@ router.get('/:userId', function(req, res, next) {
                         contentDataList.push(result[0].message);
                         //console.log("cache miss!");
                         monitoring.cacheMiss++;
-                        //operation_log.info("[Cache Hit]= " + monitoring.cacheHit + ", [Cache Miss]= " + monitoring.cacheMiss + ", [Cache Ratio]= " + monitoring.getCacheHitRatio());
+                        interim_log.info("[Cache Miss] USER ID = " + req.params.userId + ", CONTENT ID = " + key  + ", START INDEX = " + start + ", END INDEX = " + end + ", MISS INDEX = " + i);
 
                       } else {
                         error_log.error("There's no data, even in the origin mysql server!");
@@ -619,9 +619,7 @@ router.get('/:userId', function(req, res, next) {
         operation_log.info("[Read Execution Delay]= " + (readEndTime - readStartTime) + "ms");
         //operation_log.info("[Read Latency Delay]= " + monitoring.getLatencyDelay(util.getServerLocation(), userLocation) + "ms");
         operation_log.info("[Read Operation Count]= " + ++monitoring.readCount);
-        //operation_log.info("[Read Traffic]= " + (monitoring.readCount * (end-start+1)));
         operation_log.info("[Cache Hit]= " + monitoring.cacheHit + ", [Cache Miss]= " + monitoring.cacheMiss + ", [Cache Ratio]= " + monitoring.getCacheHitRatio() + "\n");
-        //operation_log.info();
         resolved();
         getUserContentData = null;
       })
@@ -663,22 +661,6 @@ router.post('/:userId', function(req, res, next) {
           friendList = result;
           resolved(friendList);
       });
-      // var friendList = [];
-      // dbPool.getConnection(function(err, conn) {
-      //     var query_stmt = 'SELECT friendId FROM friendList WHERE userId = "' + req.params.userId + '"';
-      //     conn.query(query_stmt, function(err, rows) {
-      //         if(err) {
-      //           error_log.info("fail to get friendList (MySQL) : " + err);
-      //           error_log.info("QUERY STMT : " + query_stmt);
-      //           rejected("fail to extract friend id list from origin server!");
-      //         }
-      //         for (var i=0; i<rows.length; i++) {
-      //             friendList.push(rows[i].friendId);
-      //         }
-      //         conn.release(); //MySQL connection release
-      //         resolved(friendList);
-      //     })
-      // });
   });
 
   //3-1. origin server에 있는 mysql의 content에 모든 친구들에 대해서 데이터를 넣는다. 이 때, lastInsertId를 이용해서 contentId를 만듦.
@@ -743,58 +725,6 @@ router.post('/:userId', function(req, res, next) {
   }, function(err){
       console.log(err);
   })
-
-  //3-2. origin server에 있는 mysql의 timeline에, 모든 친구들에 대해서 데이터를 넣는다.
-  // .then(function(){
-  //   return new Promise(function(resolved, rejected){
-  //     var pushIndexInOriginDB = function(i, callback){
-  //       if(i >= tweetObjectList.length){
-  //         callback();
-  //       } else {
-  //         dbPool.getConnection(function(err, conn) {
-  //             var query_stmt = 'SELECT id FROM user WHERE userId = "' + tweetObjectList[i].userId + '"';
-  //             conn.query(query_stmt, function(err, result) {
-  //                 if(err) {
-  //                    error_log.debug("Query Stmt = " + query_stmt);
-  //                    error_log.debug("ERROR MSG = " + err);
-  //                    error_log.debug();
-  //                    rejected("DB err!");
-  //                 }
-  //                 conn.release(); //MySQL connection release
-  //                 var userPkId = result[0].id;
-  //                 //////////////////////////////////////////////////////////////
-  //                 dbPool.getConnection(function(err, conn) {
-  //                     var query_stmt2 = 'INSERT INTO timeline (uid, contentId) VALUES (' + userPkId + ', ' + tweetObjectList[i].contentId + ')'
-  //                     conn.query(query_stmt2, function(err, result) {
-  //                         if(err) {
-  //                            error_log.debug("Query Stmt = " + query_stmt);
-  //                            error_log.debug("ERROR MSG = " + err);
-  //                            error_log.debug();
-  //                            rejected("DB err!");
-  //                         }
-  //                         if(result == undefined || result == null){
-  //                             error_log.debug("Query Stmt = " + query_stmt2);
-  //                             error_log.debug("Query Result = " + result);
-  //                         }
-  //
-  //                         conn.release();
-  //                         pushIndexInOriginDB(i+1, callback);
-  //                     });
-  //                 });
-  //                 //////////////////////////////////////////////////////////////
-  //             })
-  //         });
-  //       }
-  //     }
-  //
-  //     pushIndexInOriginDB(0, function(){
-  //       resolved();
-  //       pushIndexInOriginDB = null;
-  //     })
-  //   })
-  // }, function(err){
-  //     console.log(err);
-  // })
 
   //4. 다른 surrogate 서버로 redirect
   .then(function(){
