@@ -95,29 +95,31 @@ var memoryManager = {
 		    var remainMemory = value;
 
 		    //1. cache에 값이 있는지 검사한다
-		    if(!value) {
-		      //2-1. 없으면, mysql pool 로 db에 연결한다
-		      dbPool.getConnection(function(err, conn) {
-				      var query_stmt = 'SELECT * FROM ' + util.getServerLocation() + ' WHERE id = "' + key + '"';
-				      conn.query(query_stmt, function(err, rows) {
-		  			      if(err) {
-										 error_log.info("fail to get user memory from MySQL : " + err);
-										 error_log.info("QUERY STMT = " + query_stmt);
-										 error_log.info();
-					        }
-					        else {
-						          //3. 없으면 디비에 가져와서 캐쉬에 올리고 리턴
-						          var value = JSON.stringify(rows[0]);
-											value = (value * config.totalMemory);
-											remainMemory = value;
-						          redisPool.socialMemory.set(key, value, function (err) {
-													error_log.info("!!! Reset data in social memory (cuz, there's no in redis) : " + value);
-													conn.release();
-													cb(remainMemory);
-						          });
-					        }
-				      });
-			    });
+		    if(value == undefined || value == null) {
+					remainMemory = 0;
+					cb(remainMemory);
+		      // //2-1. 없으면, mysql pool 로 db에 연결한다
+		      // dbPool.getConnection(function(err, conn) {
+				  //     var query_stmt = 'SELECT * FROM ' + util.getServerLocation() + ' WHERE id = "' + key + '"';
+				  //     conn.query(query_stmt, function(err, rows) {
+		  		// 	      if(err) {
+					// 					 error_log.info("fail to get user memory from MySQL : " + err);
+					// 					 error_log.info("QUERY STMT = " + query_stmt);
+					// 					 error_log.info();
+					//         }
+					//         else {
+					// 	          //3. 없으면 디비에 가져와서 캐쉬에 올리고 리턴
+					// 	          var value = JSON.stringify(rows[0]);
+					// 						value = (value * config.totalMemory);
+					// 						remainMemory = value;
+					// 	          redisPool.socialMemory.set(key, value, function (err) {
+					// 								error_log.info("!!! Reset data in social memory (cuz, there's no in redis) : " + value);
+					// 								conn.release();
+					// 								cb(remainMemory);
+					// 	          });
+					//         }
+				  //     });
+			    // });
 		    }
 		    else {
 		      //2-2. 있으면 가져와서 리턴

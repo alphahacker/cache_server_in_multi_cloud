@@ -100,36 +100,6 @@ router.post('/', function(req, res, next) {
   }, function(err){
       console.log(err);
   })
-  // .then(function(){
-  //   return new Promise(function(resolved, rejected){
-  //     pushTweetInDataMemory = function(i, callback){
-  //       if(i >= tweetObjectList.length){
-  //         callback();
-  //       } else {
-  //
-  //         //memoryManager에서 메모리 상태를 보고, 아직 공간이 있는지 없는지 확인한다
-  //         /*
-  //           지금 redis.conf에 maxmemory-policy는 allkeys-lru로 해놨다. 최근에 가장 안쓰인 애들을 우선적으로 삭제하는 방식.
-  //           따라서 아래의 메모리 체크 함수 (checkMemory)는 우리가 제안하는 방식에서만 필요하고, baseline approach에서는 필요 없다.
-  //           baseline approach에서는 그냥, 가만히 놔두면 redis설정에 따라 오래된 애들을 우선적으로 지울듯. lru에 따라.
-  //         */
-  //         memoryManager.checkMemory(tweetObjectList[i]);
-  //         pushTweetInDataMemory(i+1, callback);
-  //       }
-  //     }
-  //
-  //     pushTweetInDataMemory(0, function(){
-  //       res.json({
-  //         "result" : "redirection completed"
-  //       })
-  //       //console.log("response is done");
-  //       resolved();
-  //     })
-  //   })
-  // }, function(err){
-  //     console.log(err);
-  // })
-
 });
 
 //redirector to other surrogate servers
