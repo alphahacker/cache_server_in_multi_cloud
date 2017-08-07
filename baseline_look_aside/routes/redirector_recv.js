@@ -77,29 +77,41 @@ router.post('/', function(req, res, next) {
       console.log(err);
   })
 
-  //6. tweetObjectList를 이용해서, 각 surrogate 서버 data 메모리에, 모든 친구들에 대해서 넣는다. 이때 메모리양 체크하면서 넣어야한다.
+  // //6. tweetObjectList를 이용해서, 각 surrogate 서버 data 메모리에, 모든 친구들에 대해서 넣는다. 이때 메모리양 체크하면서 넣어야한다.
+  // .then(function(){
+  //   return new Promise(function(resolved, rejected){
+  //     var pushTweetInDataMemory = function(i, callback){
+  //       if(i >= tweetObjectList.length){
+  //         callback();
+  //       } else {
+  //         memoryManager.setDataInMemory(tweetObjectList[i], 0);
+  //         pushTweetInDataMemory(i+1, callback);
+  //       }
+  //     }
+  //
+  //     pushTweetInDataMemory(0, function(){
+  //       res.json({
+  //         "result" : "redirection completed"
+  //       })
+  //       resolved();
+  //       pushTweetInDataMemory = null;
+  //     })
+  //   })
+  // }, function(err){
+  //     console.log(err);
+  // })
+
   .then(function(){
     return new Promise(function(resolved, rejected){
-      var pushTweetInDataMemory = function(i, callback){
-        if(i >= tweetObjectList.length){
-          callback();
-        } else {
-          memoryManager.setDataInMemory(tweetObjectList[i], 0);
-          pushTweetInDataMemory(i+1, callback);
-        }
-      }
-
-      pushTweetInDataMemory(0, function(){
-        res.json({
-          "result" : "redirection completed"
-        })
-        resolved();
-        pushTweetInDataMemory = null;
+      res.json({
+        "result" : "redirection completed"
       })
+      pushTweetInDataMemory = null;
     })
   }, function(err){
       console.log(err);
   })
+
 });
 
 //redirector to other surrogate servers
