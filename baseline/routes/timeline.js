@@ -486,7 +486,7 @@ router.get('/:userId', function(req, res, next) {
           rejected("fail to get the friendList memory in Redis");
         }
         else {
-          end = result;
+          end = result * 2;
           resolved(contentIndexList);
         }
     });
