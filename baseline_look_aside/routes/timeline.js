@@ -468,7 +468,7 @@ router.get('/:userId', function(req, res, next) {
           rejected("fail to get the friendList memory in Redis");
         }
         else {
-          end = result * 3; //친구수의 3배만큼 컨텐츠 읽어오기
+          end = result; //친구수의 3배만큼 컨텐츠 읽어오기
           resolved(contentIndexList);
         }
     });
