@@ -78,12 +78,34 @@ class TimePattern(AbstractPattern):
             return
 
         self.generalizeAllDataAsOneDay(writtenNumInHouList)
-        return self.getWorkCountByEachHour()
+        return self.jobCountByTimeList
+
 
     def getFinalTimePattern(self, writtenNumInOneday):
+        #Log.debug("writtenNumInOneday List = " + str(writtenNumInOneday))
         for i in range(0, len(writtenNumInOneday)):
+            #Log.debug("probability not applied action = " + str(writtenNumInOneday[i]))
             eachActionProbability = float(writtenNumInOneday[i]) / float(self.eachUserTotalAction)
             writtenNumInOneday[i] = self.probabilityAction(eachActionProbability, writtenNumInOneday[i])
+            # if self.userID == "0_Fuk_Given":
+            #     #print(type(writtenNumInOneday[i]))
+            #     #print('probability not applied action = %d ' % (writtenNumInOneday[i]))
+            #     #print(type(self.eachUserTotalAction))
+            #     #print('self.eachUserTotalAction = %d ' % self.eachUserTotalAction)
+            #     #print('eachActionProbability = %f ' % eachActionProbability)
+            #     print('!!!!!!!!!!!!! probability applied action = %d ' % (writtenNumInOneday[i]))
+            #     print("")
+            #
+            # Log.debug("i = " + str(i))
+            # Log.debug("probability applied action = " + str(writtenNumInOneday[i]))
+            # Log.debug("self.eachUserTotalAction = " + str(self.eachUserTotalAction))
+            # Log.debug("eachActionProbability = " + str(eachActionProbability))
+            #     Log.debug("!!!!!!!!!!!!! probability applied action = " + str(writtenNumInOneday[i]))
+            # Log.debug("")
+
+                #Log.debug("i = " + i)
+                #Log.debug("writtenNumInOneday[i] = " + writtenNumInOneday[i])
+
         return writtenNumInOneday
 
     def probabilityAction(self, eachActionProbability, writtenNumInHour):
@@ -114,9 +136,12 @@ class TimePattern(AbstractPattern):
 
         hourList = []
         for i in range(0, len(tweetList)):
+            #Log.debug("each line = " + str(tweetList[i]))
             dateArr = tweetList[i].split("T")
             timeArr = dateArr[1].split(":")
             hourList.append(int(timeArr[0]))
+            #Log.debug("timeArr[0] = " +  str(timeArr[0]))
+            #Log.debug("hourList = " + str(hourList))
 
             self.eachUserTotalAction += 1
 
