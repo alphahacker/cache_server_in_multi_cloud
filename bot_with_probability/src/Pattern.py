@@ -78,25 +78,28 @@ class TimePattern(AbstractPattern):
             return
 
         self.generalizeAllDataAsOneDay(writtenNumInHouList)
-        return self.getWorkCountByEachHour()
+        return self.jobCountByTimeList
 
     def getFinalTimePattern(self, writtenNumInOneday):
-        print('===============================')
         for i in range(0, len(writtenNumInOneday)):
-            print('probability not applied action = %d ' % (writtenNumInOneday[i]))
-            print('writtenNumInOneday[i] = %d ' % writtenNumInOneday[i])
-            print('self.eachUserTotalAction = %d ' %self.eachUserTotalAction)
             eachActionProbability = float(writtenNumInOneday[i]) / float(self.eachUserTotalAction)
-            print('eachActionProbability = %f ' % eachActionProbability)
+            # print('eachActionProbability = %f ' % eachActionProbability)
             writtenNumInOneday[i] = self.probabilityAction(eachActionProbability, writtenNumInOneday[i])
-            print('!!!!!!!!!!!!! probability applied action = %d ' % (writtenNumInOneday[i]))
-            print ""
-        return
+            # print('!!!!!!!!!!!!! probability applied action = %d ' % (writtenNumInOneday[i]))
+            # print ""
+
+            Log.debug("i = " + str(i))
+            Log.debug("probability applied action = " + str(writtenNumInOneday[i]))
+            Log.debug("self.eachUserTotalAction = " + str(self.eachUserTotalAction))
+            Log.debug("eachActionProbability = " + str(eachActionProbability))
+            # Log.debug("!!!!!!!!!!!!! probability applied action = " + str(writtenNumInOneday[i]))
+            Log.debug("")
+        return writtenNumInOneday
 
     def probabilityAction(self, eachActionProbability, writtenNumInHour):
         probList = []
-        trues = int(eachActionProbability * 100)
-        falses = 100 - trues
+        trues = int(eachActionProbability * 1000)
+        falses = 1000 - trues
 
         # create a list according to the probability
         for i in range (0, trues):
@@ -108,7 +111,7 @@ class TimePattern(AbstractPattern):
         # do iteration as much as the original number of action
         finalEachHourTatal = 0
         for i in range(0, writtenNumInHour):
-            choosedIndex = random.randint(0, 9) #getting a random number choosed
+            choosedIndex = random.randint(0, 1000) #getting a random number choosed
             if probList[choosedIndex] == 1: #if true comse out, get the toal count added 1
                 finalEachHourTatal += 1
 
@@ -124,7 +127,7 @@ class TimePattern(AbstractPattern):
             dateArr = tweetList[i].split("T")
             timeArr = dateArr[1].split(":")
             hourList.append(int(timeArr[0]))
-            print("num operation at each hour = %d " % (int)(timeArr[0]))
+            #print("num operation at each hour = %d " % (int)(timeArr[0]))
 
             self.eachUserTotalAction += 1
 
@@ -166,7 +169,7 @@ class TimePattern(AbstractPattern):
         selectedTimeCount = self.jobCountByTimeList[selectedTime]
 
         selectedTimeRatio = float(selectedTimeCount) / float(totalWrittenNum) * float(self.MAX_TWEET_NUM)
-        Log.debug("Total written num in [" + str(selectedTime) + "]: " + str(selectedTimeCount) + "/" + str(int(round(selectedTimeRatio))))
+        #Log.debug("Total written num in [" + str(selectedTime) + "]: " + str(selectedTimeCount) + "/" + str(int(round(selectedTimeRatio))))
         return int(round(selectedTimeRatio))
 
 class BehaviorPattern(AbstractPattern):
